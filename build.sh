@@ -15,16 +15,16 @@ aosp="android-8.1.0_r65"
 phh="android-8.1"
 
 if [ "$1" == "android-9.0" ];then
-    manifest_url="https://gitlab.com/aosp-security/manifest"
-    aosp="android-9.0.0_r53-r47"
-    phh="android-9.0"
+    manifest_url="https://github.com/CesiumOS-org/manifest"
+    aosp="eleven"
+    phh="eleven"
 elif [ "$1" == "android-10.0" ];then
-    manifest_url="https://android.googlesource.com/platform/manifest"
-    aosp="android-10.0.0_r41"
-    phh="android-10.0"
+    manifest_url="https://github.com/CesiumOS-org/manifest"
+    aosp="eleven"
+    phh="eleven"
 elif [ "$1" == "android-11.0" ];then
-    manifest_url="https://android.googlesource.com/platform/manifest"
-    aosp="android-11.0.0_r15"
+    manifest_url="https://github.com/CesiumOS-org/manifest"
+    aosp="eleven"
     phh="android-11.0"
 fi
 
@@ -48,13 +48,6 @@ rm -f vendor/gapps/interfaces/wifi_ext/Android.bp
 
 . build/envsetup.sh
 
-buildVariant() {
-	lunch $1
-	make BUILD_NUMBER=$rom_fp installclean
-	make BUILD_NUMBER=$rom_fp -j8 systemimage
-	make BUILD_NUMBER=$rom_fp vndk-test-sepolicy
-	xz -c $OUT/system.img -T0 > release/$rom_fp/system-${2}.img.xz
-}
 
 repo manifest -r > release/$rom_fp/manifest.xml
 bash "$originFolder"/list-patches.sh
@@ -68,66 +61,19 @@ if [ "$1" = "android-11.0" ];then
         git clone https://github.com/phhusson/vendor_vndk -b android-10.0
     )
 
-    # ARM64 vanilla {ab, a-only, ab vndk lite}
-	buildVariant treble_arm64_bvS-userdebug roar-arm64-ab-vanilla
-    ( cd sas-creator; bash run.sh 64 ; xz -c s.img -T0 > ../release/$rom_fp/system-roar-arm64-aonly-vanilla.img.xz)
-    ( cd sas-creator; bash lite-adapter.sh 64; xz -c s.img -T0 > ../release/$rom_fp/system-roar-arm64-ab-vndklite-vanilla.img.xz )
 
-    # ARM64 floss {ab, a-only, ab vndk lite}
-	buildVariant treble_arm64_bfS-userdebug roar-arm64-ab-floss
-    ( cd sas-creator; bash run.sh 64 ; xz -c s.img -T0 > ../release/$rom_fp/system-roar-arm64-aonly-floss.img.xz)
-    ( cd sas-creator; bash lite-adapter.sh 64; xz -c s.img -T0 > ../release/$rom_fp/system-roar-arm64-ab-vndklite-floss.img.xz )
-
-    # ARM32 vanilla {ab, a-only}
-	buildVariant treble_arm_bvS-userdebug roar-arm-ab-vanilla
-    ( cd sas-creator; bash run.sh 32; xz -c s.img -T0 > ../release/$rom_fp/system-roar-arm-aonly-vanilla.img.xz )
-
-    # ARM32_binder64 vanilla {ab, ab vndk lite}
-	buildVariant treble_a64_bvS-userdebug roar-a64-ab-vanilla
-    ( cd sas-creator; bash lite-adapter.sh 32; xz -c s.img -T0 > ../release/$rom_fp/system-roar-a64-ab-vndklite-vanilla.img.xz)
+    lunch cesium_CPH1859-userdebug
+    make bacon -j8
 elif [ "$1" = "android-10.0" ];then
-	buildVariant treble_arm64_afS-userdebug quack-arm64-aonly-floss
-	buildVariant treble_arm64_avS-userdebug quack-arm64-aonly-vanilla
-	buildVariant treble_arm64_agS-userdebug quack-arm64-aonly-gapps
-	buildVariant treble_arm64_aoS-userdebug quack-arm64-aonly-go
-	buildVariant treble_arm64_bfS-userdebug quack-arm64-ab-floss
-	buildVariant treble_arm64_bvS-userdebug quack-arm64-ab-vanilla
-	buildVariant treble_arm64_bgS-userdebug quack-arm64-ab-gapps
-	buildVariant treble_arm64_boS-userdebug quack-arm64-ab-go
-	buildVariant treble_arm_avS-userdebug quack-arm-aonly-vanilla
-	buildVariant treble_arm_agS-userdebug quack-arm-aonly-gapps
-	buildVariant treble_arm_aoS-userdebug quack-arm-aonly-go
-	buildVariant treble_arm_bvS-userdebug quack-arm-ab-vanilla
-	buildVariant treble_arm_bgS-userdebug quack-arm-ab-gapps
-	buildVariant treble_arm_boS-userdebug quack-arm-ab-go
-	buildVariant treble_a64_avS-userdebug quack-arm32_binder64-aonly-vanilla
-	buildVariant treble_a64_agS-userdebug quack-arm32_binder64-aonly-gapps
-	buildVariant treble_a64_aoS-userdebug quack-arm32_binder64-aonly-go
-	buildVariant treble_a64_bvS-userdebug quack-arm32_binder64-ab-vanilla
-	buildVariant treble_a64_bgS-userdebug quack-arm32_binder64-ab-gapps
-	buildVariant treble_a64_boS-userdebug quack-arm32_binder64-ab-go
+        lunch cesium_CPH1859-userdebug
+        make bacon -j8
 else
-	buildVariant treble_arm64_avN-userdebug arm64-aonly-vanilla-nosu
-	buildVariant treble_arm64_agS-userdebug arm64-aonly-gapps-su
-	#buildVariant treble_arm64_afS-userdebug arm64-aonly-floss-su
-	rm -Rf out/target/product/phhgsi*
 
-	buildVariant treble_arm64_bvN-userdebug arm64-ab-vanilla-nosu
-	buildVariant treble_arm64_bgS-userdebug arm64-ab-gapps-su
-	#buildVariant treble_arm64_bfS-userdebug arm64-ab-floss-su
-	rm -Rf out/target/product/phhgsi*
-
-	buildVariant treble_arm_avN-userdebug arm-aonly-vanilla-nosu
-	[ "$1" != "android-9.0" ] && buildVariant treble_arm_aoS-userdebug arm-aonly-go-su
-	buildVariant treble_arm_agS-userdebug arm-aonly-gapps-su
-	rm -Rf out/target/product/phhgsi*
-
-	buildVariant treble_a64_avN-userdebug arm32_binder64-aonly-vanilla-nosu
-	buildVariant treble_a64_agS-userdebug arm32_binder64-aonly-gapps-su
 	rm -Rf out/target/product/phhgsi*
 
 	if [ "$1" = "android-9.0" ];then
-	buildVariant treble_a64_bvN-userdebug arm32_binder64-ab-vanilla-nosu
+        lunch cesium_CPH1859-userdebug
+        make bacon -j8
 	buildVariant treble_a64_bgS-userdebug arm32_binder64-ab-gapps-su
 	fi
 	rm -Rf out/target/product/phhgsi*
